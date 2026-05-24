@@ -1,16 +1,32 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+
+import { AuthModule } from './auth/auth.module';
+import { OtpModule } from './otp/otp.module';
 import { UserModule } from './user/user.module';
 
-const mongoUri = process.env.MONGODB_URI;
-if (!mongoUri) {
-  throw new Error('MONGODB_URI environment variable is required');
-}
-
 @Module({
-  imports: [MongooseModule.forRoot(mongoUri), UserModule],
+  imports: [
+    TypeOrmModule.forRootAsync({
+      useFactory: () => {
+        const databaseUrl = process.env.DATABASE_URL;
+        if (!databaseUrl) {
+          throw new Error('DATABASE_URL environment variable is required');
+        }
+        return {
+          type: 'postgres',
+          url: databaseUrl,
+          autoLoadEntities: true,
+          synchronize: true,
+        };
+      },
+    }),
+    UserModule,
+    OtpModule,
+    AuthModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
